@@ -1,20 +1,23 @@
 package com.example.theme
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
-// esse side effects jo only one time excute krrna h
-// or kissi condition me launch krrna ho to to wha launched effect use krrte h
+/// LaunchEffect is composable fun. that can not be called under any event (like button click)
 
+//  indipendentaly courotene launch krrne we need scope so we use rememberCoroutineScope()
+
+//** side effect ko run krne we have 1.-launchEffect and 2.- rememberCoroutineScope
 class MainActivity : ComponentActivity() {
 
     //    Composable should be side effect free
@@ -22,75 +25,84 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-//            exampe 1.
-//            sideEffect()
+//            LaunchEffectComposable()
 
-//            exampe 2.
-//            ListComposable()
-
-//            example 3.
-            Counter()
+            CoroutineScopeComposable()
         }
     }
 }
 
-//var count = 1
-//@Composable
-//fun sideEffect() {
-//    count++
-//    Text(text = "Cheesy code")
-//
-//}
-//
-
-//@Composable
-//fun ListComposable() {
-//
-//    val categoryState = remember { mutableStateOf(emptyList<String>()) }
-//
-////    problem1. fetchCategory will be call multiple time
-////    and 2. Time consuming
-//    categoryState.value = fetchCategory()
-//
-//
-////    define affect handler which will execute one time for managing side effect in controlled way
-//// it will excute in curotene scope
-//    LaunchedEffect(key1 = Unit) {
-//        categoryState.value = fetchCategory()
-//    }
-//
-//    LazyColumn {
-//
-//        items(categoryState.value) { item ->
-//            Text(text = item)
-//        }
-//    }
-//
-//}
-//
-//fun fetchCategory(): List<String> {
-//    return listOf("One", "Two", "Three")
-//}
-
 
 @Composable
-fun Counter() {
+fun LaunchEffectComposable() {
 
-    val count = remember {
+    val counter = remember { mutableStateOf(0) }
+
+    var scope = rememberCoroutineScope()
+
+    LaunchedEffect(key1 = Unit) {
+
+        Log.d("Counter", "Started")
+
+        try {
+            for (i in 1..10) {
+                counter.value++
+                delay(1000)
+            }
+        } catch (e: Exception) {
+
+            Log.d("launchEffectComposable", "Exception : ${e.message}")
+        }
+
+    }
+    var text = "Counter is running ${counter.value}"
+
+    if (counter.value == 10) {
+        text = "Counter stopped"
+    }
+    Text(text = text)
+}
+
+
+//2.
+@SuppressLint("CoroutineCreationDuringComposition")
+@Composable
+fun CoroutineScopeComposable() {
+
+    val counter = remember {
         mutableStateOf(0)
     }
 
-    val key = count.value % 3 == 0
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(key1 = key) {
+    var text = "Counter is running ${counter.value}"
 
-        Log.d("Counter", "current count:${count.value}")
+    if (counter.value == 10) {
 
+        text = "Counter stopped"
     }
 
+    Column {
+        Text(text = text)
 
-    Button(onClick = { count.value++ }) {
-        Text(text = "increement")
+        Button(onClick = {
+
+            scope.launch {
+
+                Log.d("CoroutineScopeComposable", "Started")
+                try {
+                    for (i in 1..10) {
+                        counter.value++
+                        delay(1000)
+                    }
+                } catch (e: Exception) {
+                    Log.d("CoroutineScopeComposable", "Exeption:${e.message}")
+                }
+            }
+        }
+
+        ) {
+            Text(text = "Start")
+        }
     }
 }
-
