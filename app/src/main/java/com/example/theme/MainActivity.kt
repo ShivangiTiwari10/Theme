@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
@@ -16,7 +17,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-            App()
+//            App()
+
+            Appp()
         }
     }
 
@@ -42,7 +45,7 @@ fun Counter(value: Int) {
 //    LaunchedEffect fun does not call in Recomposition
 //    yee initial composition yaa key change pr hi call hota h
 
-    val  state = rememberUpdatedState(newValue = value)
+    val state = rememberUpdatedState(newValue = value)
 
     LaunchedEffect(key1 = Unit) {
 
@@ -52,6 +55,40 @@ fun Counter(value: Int) {
     }
 
     Text(text = value.toString())
+}
+
+
+fun a() {
+    Log.d("RememberUpdateState", "I am A")
+}
+
+fun b() {
+    Log.d("RememberUpdateState", "I am B")
+}
+
+@Composable
+fun Appp() {
+
+    val state = remember { mutableStateOf(::a) }
+
+    Button(onClick = { state.value = ::b }) {
+
+        Text(text = "Click to change State")
+    }
+
+    LandingScreen(state.value)
+
+}
+
+@Composable
+fun LandingScreen(onTimeout: () -> Unit) {
+
+    val currentOnTimeOut by rememberUpdatedState(onTimeout)
+
+    LaunchedEffect(true) {
+        delay(5000)
+        currentOnTimeOut()
+    }
 }
 
 
