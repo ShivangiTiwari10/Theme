@@ -1,14 +1,27 @@
 package com.example.theme
 
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewTreeObserver
+import android.view.WindowInsetsAnimation
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
-import kotlinx.coroutines.delay
+import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
+
+// those side effect where cleanUp required There we use disposableCleanUp before leaving the composition
+//    before leaving the composition if u want to cleanUp that code will be written under disposable func.
 
 class MainActivity : ComponentActivity() {
 
@@ -16,80 +29,81 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
 //            App()
+//            MediaCompoable()
 
-            Appp()
+            KeyboardComposable()
+            TextField(value = "", onValueChange = {})
         }
     }
 
 
-}
+    @Composable
+    fun App() {
+
+        var state = remember {
+            mutableStateOf(false)
+        }
 
 
-@Composable
-fun App() {
-    val counter = remember { mutableStateOf(0) }
-    LaunchedEffect(key1 = Unit) {
-        delay(2000)
+        DisposableEffect(key1 = state.value) {
 
-        counter.value = 10
-    }
-    Counter(counter.value)
-}
+            Log.d("Diposable", "Disposable effect started")
 
-@Composable
-fun Counter(value: Int) {
-
-
-//    LaunchedEffect fun does not call in Recomposition
-//    yee initial composition yaa key change pr hi call hota h
-
-    val state = rememberUpdatedState(newValue = value)
-
-    LaunchedEffect(key1 = Unit) {
-
-        delay(5000)
-
-        Log.d("CheesyCode", state.value.toString())
+            onDispose {
+                Log.d("Diposable", "Cleaning Up side effect")
+            }
+        }
+        Button(onClick = { state.value = !state.value }) {
+            Text(text = "change state")
+        }
     }
 
-    Text(text = value.toString())
-}
 
+    @Composable
+    fun MediaCompoable() {
 
-fun a() {
-    Log.d("RememberUpdateState", "I am A")
-}
+        val context = LocalContext.current
 
-fun b() {
-    Log.d("RememberUpdateState", "I am B")
-}
+        DisposableEffect(Unit) {
 
-@Composable
-fun Appp() {
+            val mediaPlayer = MediaPlayer.create(context, R.raw.audiomp3)
+            mediaPlayer.start()
+            onDispose {
 
-    val state = remember { mutableStateOf(::a) }
+                mediaPlayer.stop()
+                mediaPlayer.release()
 
-    Button(onClick = { state.value = ::b }) {
+            }
+        }
 
-        Text(text = "Click to change State")
     }
 
-    LandingScreen(state.value)
 
 }
 
 @Composable
-fun LandingScreen(onTimeout: () -> Unit) {
+fun KeyboardComposable() {
 
-    val currentOnTimeOut by rememberUpdatedState(onTimeout)
+    val view = LocalView.current
 
-    LaunchedEffect(true) {
-        delay(5000)
-        currentOnTimeOut()
+    DisposableEffect(key1 = Unit) {
+        val listner = ViewTreeObserver.OnGlobalLayoutListener {
+
+
+//        **    insects are rectangle present in screen
+//        **   ime is used for keyboard
+            val insects = ViewCompat.getRootWindowInsets(view)
+            val iskeyBoardVisible = insects!!.isVisible(WindowInsetsCompat.Type.ime())
+
+            Log.d("IsKeyBoardVisible", iskeyBoardVisible.toString())
+        }
+        view.viewTreeObserver.addOnGlobalLayoutListener(listner)
+
+        onDispose {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(listner)
+
+        }
     }
+
 }
-
-
-
