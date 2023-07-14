@@ -1,23 +1,14 @@
 package com.example.theme
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 
-/// LaunchEffect is composable fun. that can not be called under any event (like button click)
-
-//  indipendentaly courotene launch krrne we need scope so we use rememberCoroutineScope()
-
-//** side effect ko run krne we have 1.-launchEffect and 2.- rememberCoroutineScope
 class MainActivity : ComponentActivity() {
 
     //    Composable should be side effect free
@@ -25,84 +16,43 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
 
-//            LaunchEffectComposable()
-
-            CoroutineScopeComposable()
+            App()
         }
     }
+
+
 }
 
 
 @Composable
-fun LaunchEffectComposable() {
-
+fun App() {
     val counter = remember { mutableStateOf(0) }
+    LaunchedEffect(key1 = Unit) {
+        delay(2000)
 
-    var scope = rememberCoroutineScope()
+        counter.value = 10
+    }
+    Counter(counter.value)
+}
+
+@Composable
+fun Counter(value: Int) {
+
+
+//    LaunchedEffect fun does not call in Recomposition
+//    yee initial composition yaa key change pr hi call hota h
+
+    val  state = rememberUpdatedState(newValue = value)
 
     LaunchedEffect(key1 = Unit) {
 
-        Log.d("Counter", "Started")
+        delay(5000)
 
-        try {
-            for (i in 1..10) {
-                counter.value++
-                delay(1000)
-            }
-        } catch (e: Exception) {
-
-            Log.d("launchEffectComposable", "Exception : ${e.message}")
-        }
-
+        Log.d("CheesyCode", state.value.toString())
     }
-    var text = "Counter is running ${counter.value}"
 
-    if (counter.value == 10) {
-        text = "Counter stopped"
-    }
-    Text(text = text)
+    Text(text = value.toString())
 }
 
 
-//2.
-@SuppressLint("CoroutineCreationDuringComposition")
-@Composable
-fun CoroutineScopeComposable() {
 
-    val counter = remember {
-        mutableStateOf(0)
-    }
-
-    val scope = rememberCoroutineScope()
-
-    var text = "Counter is running ${counter.value}"
-
-    if (counter.value == 10) {
-
-        text = "Counter stopped"
-    }
-
-    Column {
-        Text(text = text)
-
-        Button(onClick = {
-
-            scope.launch {
-
-                Log.d("CoroutineScopeComposable", "Started")
-                try {
-                    for (i in 1..10) {
-                        counter.value++
-                        delay(1000)
-                    }
-                } catch (e: Exception) {
-                    Log.d("CoroutineScopeComposable", "Exeption:${e.message}")
-                }
-            }
-        }
-
-        ) {
-            Text(text = "Start")
-        }
-    }
-}
