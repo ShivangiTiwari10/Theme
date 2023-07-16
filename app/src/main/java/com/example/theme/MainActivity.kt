@@ -1,27 +1,27 @@
 package com.example.theme
 
-import android.media.MediaPlayer
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
-import android.view.ViewTreeObserver
-import android.view.WindowInsetsAnimation
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material.Button
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 
-// those side effect where cleanUp required There we use disposableCleanUp before leaving the composition
-//    before leaving the composition if u want to cleanUp that code will be written under disposable func.
+//        ProduceState --
+//   *** state ka object produce krega  jiski value asyncronasly update krr payenge
 
 class MainActivity : ComponentActivity() {
 
@@ -29,81 +29,92 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-//            App()
-//            MediaCompoable()
+//            counter()
+//            Loader()
 
-            KeyboardComposable()
-            TextField(value = "", onValueChange = {})
+            Derived()
         }
     }
-
-
-    @Composable
-    fun App() {
-
-        var state = remember {
-            mutableStateOf(false)
-        }
-
-
-        DisposableEffect(key1 = state.value) {
-
-            Log.d("Diposable", "Disposable effect started")
-
-            onDispose {
-                Log.d("Diposable", "Cleaning Up side effect")
-            }
-        }
-        Button(onClick = { state.value = !state.value }) {
-            Text(text = "change state")
-        }
-    }
-
-
-    @Composable
-    fun MediaCompoable() {
-
-        val context = LocalContext.current
-
-        DisposableEffect(Unit) {
-
-            val mediaPlayer = MediaPlayer.create(context, R.raw.audiomp3)
-            mediaPlayer.start()
-            onDispose {
-
-                mediaPlayer.stop()
-                mediaPlayer.release()
-
-            }
-        }
-
-    }
-
 
 }
 
 @Composable
-fun KeyboardComposable() {
-
-    val view = LocalView.current
-
-    DisposableEffect(key1 = Unit) {
-        val listner = ViewTreeObserver.OnGlobalLayoutListener {
+fun counter() {
 
 
-//        **    insects are rectangle present in screen
-//        **   ime is used for keyboard
-            val insects = ViewCompat.getRootWindowInsets(view)
-            val iskeyBoardVisible = insects!!.isVisible(WindowInsetsCompat.Type.ime())
-
-            Log.d("IsKeyBoardVisible", iskeyBoardVisible.toString())
-        }
-        view.viewTreeObserver.addOnGlobalLayoutListener(listner)
-
-        onDispose {
-            view.viewTreeObserver.removeOnGlobalLayoutListener(listner)
-
+    val state = produceState(initialValue = 0) {
+        for (i in 1..10) {
+            delay(1000)
+            value += 1
         }
     }
 
+    Text(
+        text = state.value.toString(),
+        style = MaterialTheme.typography.h1
+    )
+}
+
+
+@Composable
+fun Loader() {
+
+    val degree = produceState(initialValue = 0) {
+
+        while (true) {
+
+            delay(16)
+            value = (value + 15) % 360
+        }
+
+
+    }
+
+    Box(contentAlignment = Alignment.Center,
+        modifier = androidx.compose.ui.Modifier.fillMaxSize(1f),
+        content = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "",
+                    modifier = androidx.compose.ui.Modifier
+                        .size(60.dp)
+                        .rotate(degree.value.toFloat())
+                )
+                Text(text = "Loading")
+            }
+
+        }
+    )
+}
+
+
+@SuppressLint("UnrememberedMutableState")
+@Composable
+fun Derived() {
+
+    val tableOf = remember {
+        mutableStateOf(5)
+    }
+    val index = produceState(initialValue = 1) {
+
+
+        repeat(9) {
+            delay(1000)
+            value += 1
+        }
+    }
+
+    val message = derivedStateOf {
+        "${tableOf.value} *${index.value}= ${tableOf.value * index.value}"
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = androidx.compose.ui.Modifier.fillMaxSize(1f)
+    ) {
+        Text(
+            text = message.value,
+            style = MaterialTheme.typography.h1
+        )
+    }
 }
